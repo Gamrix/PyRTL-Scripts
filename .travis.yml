@@ -1,0 +1,17 @@
+language: python
+python: 2.7
+env:
+  - TOXENV="py{3.4,2.7}-{test}-{travis}, pep8"
+# don't test branches that might not build
+branches:
+  only:
+    - master
+    - development
+install:
+  - pip install coverage
+  - pip install codecov
+  - pip install tox
+script:
+  - tox
+after_success:
+  - codecov
