@@ -19,11 +19,21 @@ import pyrtl
 # NETWORKX and D3 Support
 
 
+# reference webpages:
 # networkx d3 example https://github.com/networkx/networkx/blob/master/examples/javascript/force.py
 # d3 pan and zoom example http://bl.ocks.org/stepheneb/1182434
 # better d3 pan and zoom example: http://bl.ocks.org/robschmuecker/7880033
 # d3 force directed graph example http://bl.ocks.org/d3noob/5141278
 # d3 force zoom http://bl.ocks.org/d3noob/5141278
+# d3 force constrained http://stackoverflow.com/questions/20635480/constrained-d3-js-force-display/20643596#20643596
+
+
+def add_timing_info(net_attrs=None, timing=None):
+    if net_attrs is None:
+        net_attrs = {}
+    if timing is None:
+        from pyrtl.analysis import estimate
+        timing = estimate.TimingAnalysis()
 
 
 def networkx_graph(net_graph=None, net_attrs=None, edge_attr=None):
@@ -55,6 +65,17 @@ def networkx_graph(net_graph=None, net_attrs=None, edge_attr=None):
 
 # D3 usage quick guide:
 # In order to change properties of the
+
+
+def add_attr(dict, attr, val, *levels):
+    if len(levels) == 0:
+        dict[attr] = val
+        return
+
+    if levels not in dict:
+        dict[levels] = {}
+    add_attr(dict[levels], attr, val, *levels[1:])
+
 
 def str_convert_dict(dict, levels=1, cLLV=False, str_fun=str):
 
@@ -117,7 +138,6 @@ def _check_graph_items(pyrtl_graph=None, net_attrs=None, edge_attr=None):
         edge_attr = {}
 
     return pyrtl_graph, net_attrs, edge_attr
-
 
 
 def show_graph(pyrtl_graph=None, net_attrs=None, edge_attr=None):
