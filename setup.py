@@ -1,18 +1,16 @@
 from setuptools import setup
 
 setup(
-    name = 'pyrtl-scripts',
-    version = '0.0.1',
-    packages =  ['johnlib'],
-    description = 'RTL-level Hardware Design and Simulation Toolkit scripts',
+    name='PyRTL-Scripts',
+    version='0.0.1',
+    packages=['JohnLib'],
+    description='RTL-level Hardware Design and Simulation Toolkit scripts',
     author='John Clow',
     author_email='',
-    install_requires =  ['six', 'pyrtl'],
-    tests_require =  ['tox', 'nose'],
-    extras_require =  {
-        'blif parsing': ['pyparsing']
-        },
-    classifiers = [
+    install_requires=['six', 'pyrtl'],
+    tests_require=['tox', 'nose'],
+    extras_require={},
+    classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Intended Audience :: Developers',
@@ -26,5 +24,5 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)',
         'Topic :: System :: Hardware'
-        ]
+    ]
 )
