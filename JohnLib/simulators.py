@@ -66,5 +66,3 @@ def _get_output(out_wire, block):
         return out_wire
     else:
         raise pyrtl.PyrtlError("Invalid out_wire, %s" % str(out_wire))
-
-

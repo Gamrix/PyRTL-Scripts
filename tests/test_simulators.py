@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import unittest
 
 import pyrtl
-from johnlib import simulators
+from JohnLib import simulators
 
 
 class TestCheckEquivalence(unittest.TestCase):

@@ -2,12 +2,12 @@ from __future__ import print_function
 import pyrtl
 
 
-
 # graph format
 # format goals:
 #   Trivial for user to set up
 #   Easy for user to change visualizations
-#   Interoperatablility between different formats supported, but could require some user intervention
+#   Interoperatablility between different formats supported,
+#     but could require some user intervention
 #   Single pipeline for creating graphs - one interface
 #   Keeps directed graph information
 
@@ -18,22 +18,31 @@ import pyrtl
 
 # NETWORKX and D3 Support
 
-
-# reference webpages:
+# reference web pages:
 # networkx d3 example https://github.com/networkx/networkx/blob/master/examples/javascript/force.py
 # d3 pan and zoom example http://bl.ocks.org/stepheneb/1182434
 # better d3 pan and zoom example: http://bl.ocks.org/robschmuecker/7880033
 # d3 force directed graph example http://bl.ocks.org/d3noob/5141278
 # d3 force zoom http://bl.ocks.org/d3noob/5141278
-# d3 force constrained http://stackoverflow.com/questions/20635480/constrained-d3-js-force-display/20643596#20643596
+# d3 force constrained:
+#   http://stackoverflow.com/questions/20635480/constrained-d3-js-force-display/20643596
+#   http://mbostock.github.io/d3/talk/20110921/#22
 
 
-def add_timing_info(net_attrs=None, timing=None):
+def add_timing_info(net_attrs=None, edge_attr=None, timing=None, scale=.2, offset=30):
     if net_attrs is None:
         net_attrs = {}
+    if edge_attr is None:
+        edge_attr = {}
     if timing is None:
         from pyrtl.analysis import estimate
         timing = estimate.TimingAnalysis()
+
+    src_net, dst_net = pyrtl.working_block().as_graph(include_virtual_nodes=True)
+
+    for wire, delay in timing.timing_map.items():
+        add_attr(net_attrs, 'delay', delay * scale + offset, src_net[wire])
+    return net_attrs
 
 
 def networkx_graph(net_graph=None, net_attrs=None, edge_attr=None):
@@ -78,16 +87,12 @@ def add_attr(dict, attr, val, *levels):
 
 
 def str_convert_dict(dict, levels=1, cLLV=False, str_fun=str):
-
-    conv_dict = {}
     if levels == 0:
         if cLLV:  # convert last layer vals
             return str_fun(dict)
         return dict
-
     conv_dict = {str_fun(k): str_convert_dict(v, levels - 1, cLLV, str_fun)
                  for k, v in dict.items()}
-
     return conv_dict
 
 
@@ -104,17 +109,17 @@ def convert_pyrtl_to_str(net_graph=None, net_attrs=None, edge_attr=None):
     return conv_net_graph, conv_net_attrs, conv_edge_attrs
 
 
-def build_d3_json(netx_graph, file='force/force.json'):
+def build_d3_json(netx_graph, file='force_constrained/force.json'):
     import json
     from networkx.readwrite import json_graph
     d = json_graph.node_link_data(netx_graph)
     with open(file, 'w') as f:
-        json.dump(d, f)
+        json.dump(d, f, indent=4)
 
     print('Wrote node-link JSON data to {}'.format(file))
 
 
-def start_flask(folder='force'):
+def start_flask(folder='force_constrained'):
     import flask
     # Serve the file over http to allow for cross origin requests
     app = flask.Flask(__name__, static_folder=folder)
@@ -141,12 +146,12 @@ def _check_graph_items(pyrtl_graph=None, net_attrs=None, edge_attr=None):
 
 
 def show_graph(pyrtl_graph=None, net_attrs=None, edge_attr=None):
-    import webbrowser
-    graph_data = _check_graph_items(pyrtl_graph, net_attrs, edge_attr)
-    conv_graph_data = convert_pyrtl_to_str(*graph_data)
+    # import webbrowser
+    pyrtl_graph, net_attrs, edge_attr = _check_graph_items(pyrtl_graph, net_attrs, edge_attr)
+    net_attrs = add_timing_info(net_attrs)
+    conv_graph_data = convert_pyrtl_to_str(pyrtl_graph, net_attrs, edge_attr)
 
     Ngraph = networkx_graph(*conv_graph_data)
     build_d3_json(Ngraph)
     start_flask()
-    webbrowser.open("http://localhost:8000/force.html")
-
+    # webbrowser.open("http://localhost:8000/force.html")
