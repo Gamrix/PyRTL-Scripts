@@ -81,9 +81,10 @@ def add_attr(dict, attr, val, *levels):
         dict[attr] = val
         return
 
-    if levels not in dict:
-        dict[levels] = {}
-    add_attr(dict[levels], attr, val, *levels[1:])
+    if levels[0] not in dict:
+        dict[levels[0]] = {}
+    add_attr(dict[levels[0]], attr, val, *levels[1:])
+    return dict
 
 
 def str_convert_dict(dict, levels=1, cLLV=False, str_fun=str):
