@@ -11,11 +11,10 @@ var vis = d3.select("#chart")
 d3.json("force.json", function(json) {
   var force = d3.layout.force()
       .charge(-120)
-      .linkDistance(60)
       .nodes(json.nodes)
       .links(json.links)
-      .size([w, h])
-      .start();
+      .size([w, h]);
+
 
   var marker = vis.append("svg:defs").selectAll("marker")
         .data(["end"])      // Different link/path types can be defined here
@@ -40,8 +39,14 @@ d3.json("force.json", function(json) {
       .attr("y1", function(d) { return d.source.y; })
       .attr("x2", function(d) { return d.target.x; })
       .attr("y2", function(d) { return d.target.y; })
+      .attr("linkDistance", function(d) { return d.linkDistance; })
       .attr("marker-end", "url(#end)");  // adds the arrows
 
+    force.linkDistance(function(link){
+       return link.linkDistance;
+       });
+      // http://bl.ocks.org/sathomas/83515b77c2764837aac2
+    force.start();
 
   var node = vis.selectAll("circle.node")
       .data(json.nodes)
@@ -67,24 +72,25 @@ d3.json("force.json", function(json) {
 
     var kx = 1.2 * e.alpha;
 
-    /*
     node.forEach(function(d, i) {
       d.x += (d.depth - d.x) * kx;
     });
+    /*
     link.forEach(function(d, i) {
       d.target.x += (d.target.depth * 120 - d.target.x) * kx;
     });
     */
+
+    node.attr("cx", function(d) {
+        d.x += (d.depth - d.x) * kx;
+      return d.x; })
+        .attr("cy", function(d) { return d.y; });
 
     link.attr("x1", function(d) { return d.source.x; })
         .attr("y1", function(d) { return d.source.y; })
         .attr("x2", function(d) { return d.target.x; })
         .attr("y2", function(d) { return d.target.y; });
 
-    node.attr("cx", function(d) {
-      d.x += (d.depth - d.x) * kx;
-      return d.x; })
-        .attr("cy", function(d) { return d.y; });
 
   });
 });

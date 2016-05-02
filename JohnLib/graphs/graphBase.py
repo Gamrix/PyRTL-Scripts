@@ -29,20 +29,40 @@ import pyrtl
 #   http://mbostock.github.io/d3/talk/20110921/#22
 
 
-def add_timing_info(net_attrs=None, edge_attr=None, timing=None, scale=.4, offset=30):
-    if net_attrs is None:
-        net_attrs = {}
-    if edge_attr is None:
-        edge_attr = {}
+def add_timing_info(net_graph=None, net_attrs=None, edge_attr=None, timing=None, scale=.4, offset=50):
+    net_graph, net_attrs, edge_attr = _check_graph_items(net_graph, net_attrs, edge_attr)
     if timing is None:
         from pyrtl.analysis import estimate
         timing = estimate.TimingAnalysis()
 
-    src_net, dst_net = pyrtl.working_block().as_graph(include_virtual_nodes=True)
+    wire_src, wire_dst = pyrtl.working_block().as_graph(include_virtual_nodes=True)
 
-    for wire, delay in timing.timing_map.items():
-        add_attr(net_attrs, 'depth', delay * scale + offset, src_net[wire])
-    return net_attrs
+    tmap = timing.timing_map
+    lDist = 'linkDistance'
+
+    for wire, delay in tmap.items():
+        item_offset = offset
+        if isinstance(wire_src, (pyrtl.Input, pyrtl.Const, pyrtl.Register)):
+            item_offset -= 20
+        add_attr(net_attrs, 'depth', delay * scale + item_offset, wire_src[wire])
+
+    block = pyrtl.working_block()
+    # deal with special cases
+    for element in block.wirevector_subset(pyrtl.Output):
+        add_attr(net_attrs, 'depth', tmap[element] * scale + offset + 20, element)
+        # add_attr(edge_attr, lDist, 30 + 20, element, element)  # add custom links
+
+    for element in block.logic_subset('@r'):
+        max_timing = max(*(tmap[w] for w in element.args))
+        add_attr(net_attrs, 'depth', max_timing * scale + offset + 20, element)
+
+    # now figure out the edges:
+    for src_net, sn_dict in net_graph.items():
+        for dst_net, dn_wire in sn_dict.items():
+            dist = net_attrs[dst_net]['depth'] - net_attrs[src_net]['depth'] + 30
+            add_attr(edge_attr, lDist, dist, src_net, dst_net)
+
+    return net_attrs, edge_attr
 
 
 def networkx_graph(net_graph=None, net_attrs=None, edge_attr=None):
@@ -102,7 +122,7 @@ def convert_pyrtl_to_str(net_graph=None, net_attrs=None, edge_attr=None):
     conv_net_graph = str_convert_dict(net_graph, 2, True)
     conv_net_attrs = str_convert_dict(net_attrs, 1)
     conv_edge_attrs = str_convert_dict(edge_attr, 1)
-    for key, val_dict in conv_edge_attrs:
+    for key, val_dict in conv_edge_attrs.items():
         nets = set(n for n in val_dict.keys() if isinstance(n, pyrtl.LogicNet))
         for n in nets:
             val_dict[str(n)] = val_dict[n]
@@ -149,7 +169,7 @@ def _check_graph_items(pyrtl_graph=None, net_attrs=None, edge_attr=None):
 def show_graph(pyrtl_graph=None, net_attrs=None, edge_attr=None):
     # import webbrowser
     pyrtl_graph, net_attrs, edge_attr = _check_graph_items(pyrtl_graph, net_attrs, edge_attr)
-    net_attrs = add_timing_info(net_attrs)
+    net_attrs, edge_attr = add_timing_info(pyrtl_graph, net_attrs, edge_attr)
     conv_graph_data = convert_pyrtl_to_str(pyrtl_graph, net_attrs, edge_attr)
 
     Ngraph = networkx_graph(*conv_graph_data)
