@@ -1,4 +1,6 @@
 from __future__ import print_function
+
+import math
 import pyrtl
 
 
@@ -29,7 +31,12 @@ import pyrtl
 #   http://mbostock.github.io/d3/talk/20110921/#22
 
 
-def add_timing_info(net_graph=None, net_attrs=None, edge_attr=None, timing=None, scale=.4, offset=50):
+# some layout variables
+link_min_dist = 40
+
+
+def add_timing_info(net_graph=None, net_attrs=None, edge_attr=None, timing=None,
+                    scale=.4, offset=50):
     net_graph, net_attrs, edge_attr = _check_graph_items(net_graph, net_attrs, edge_attr)
     if timing is None:
         from pyrtl.analysis import estimate
@@ -43,7 +50,7 @@ def add_timing_info(net_graph=None, net_attrs=None, edge_attr=None, timing=None,
     for wire, delay in tmap.items():
         item_offset = offset
         if isinstance(wire_src, (pyrtl.Input, pyrtl.Const, pyrtl.Register)):
-            item_offset -= 20
+            item_offset -= 40
         add_attr(net_attrs, 'depth', delay * scale + item_offset, wire_src[wire])
 
     block = pyrtl.working_block()
@@ -59,7 +66,8 @@ def add_timing_info(net_graph=None, net_attrs=None, edge_attr=None, timing=None,
     # now figure out the edges:
     for src_net, sn_dict in net_graph.items():
         for dst_net, dn_wire in sn_dict.items():
-            dist = net_attrs[dst_net]['depth'] - net_attrs[src_net]['depth'] + 30
+            depth_dist = net_attrs[dst_net]['depth'] - net_attrs[src_net]['depth']
+            dist = math.sqrt(link_min_dist**2 + (depth_dist*1.1)**2)
             add_attr(edge_attr, lDist, dist, src_net, dst_net)
 
     return net_attrs, edge_attr

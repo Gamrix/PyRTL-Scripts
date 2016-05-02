@@ -13,7 +13,8 @@ d3.json("force.json", function(json) {
       .charge(-120)
       .nodes(json.nodes)
       .links(json.links)
-      .size([w, h]);
+      .size([w, h])
+      .gravity(.02);
 
 
   var marker = vis.append("svg:defs").selectAll("marker")
@@ -43,7 +44,7 @@ d3.json("force.json", function(json) {
       .attr("marker-end", "url(#end)");  // adds the arrows
 
     force.linkDistance(function(link){
-       return link.linkDistance;
+       return ('linkDistance' in link)? link.linkDistance: 50;
        });
       // http://bl.ocks.org/sathomas/83515b77c2764837aac2
     force.start();
@@ -70,7 +71,8 @@ d3.json("force.json", function(json) {
   force.on("tick", function(e) {
     // Add extra forces
 
-    var kx = 1.2 * e.alpha;
+    //var kx = 1.2 * e.alpha;
+    var kx = .6 * e.alpha;
 
     node.forEach(function(d, i) {
       d.x += (d.depth - d.x) * kx;
