@@ -29,7 +29,7 @@ import pyrtl
 #   http://mbostock.github.io/d3/talk/20110921/#22
 
 
-def add_timing_info(net_attrs=None, edge_attr=None, timing=None, scale=.2, offset=30):
+def add_timing_info(net_attrs=None, edge_attr=None, timing=None, scale=.4, offset=30):
     if net_attrs is None:
         net_attrs = {}
     if edge_attr is None:
@@ -41,7 +41,7 @@ def add_timing_info(net_attrs=None, edge_attr=None, timing=None, scale=.2, offse
     src_net, dst_net = pyrtl.working_block().as_graph(include_virtual_nodes=True)
 
     for wire, delay in timing.timing_map.items():
-        add_attr(net_attrs, 'delay', delay * scale + offset, src_net[wire])
+        add_attr(net_attrs, 'depth', delay * scale + offset, src_net[wire])
     return net_attrs
 
 

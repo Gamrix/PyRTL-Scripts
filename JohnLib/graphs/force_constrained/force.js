@@ -49,6 +49,7 @@ d3.json("force.json", function(json) {
       .attr("class", "node")
       .attr("cx", function(d) { return d.x; })
       .attr("cy", function(d) { return d.y; })
+      .attr("depth", function(d) { return d.depth; })
       .attr("r", 10)
       .style("fill", function(d) { return d.fill; })
       .call(force.drag);
@@ -65,9 +66,11 @@ d3.json("force.json", function(json) {
     // Add extra forces
 
     var kx = 1.2 * e.alpha;
-    node.forEach(function(d, i) {
-    });
+
     /*
+    node.forEach(function(d, i) {
+      d.x += (d.depth - d.x) * kx;
+    });
     link.forEach(function(d, i) {
       d.target.x += (d.target.depth * 120 - d.target.x) * kx;
     });
@@ -78,7 +81,9 @@ d3.json("force.json", function(json) {
         .attr("x2", function(d) { return d.target.x; })
         .attr("y2", function(d) { return d.target.y; });
 
-    node.attr("cx", function(d) { return d.x; })
+    node.attr("cx", function(d) {
+      d.x += (d.depth - d.x) * kx;
+      return d.x; })
         .attr("cy", function(d) { return d.y; });
 
   });
