@@ -6,7 +6,16 @@ var w = 1000,
 var vis = d3.select("#chart")
   .append("svg:svg")
     .attr("width", w)
-    .attr("height", h);
+    .attr("height", h)
+    .attr("pointer-events", "all")
+  .append('svg:g')
+    .call(d3.behavior.zoom().on("zoom", redraw))
+  .append('svg:g');
+
+function redraw() {
+    vis.attr("transform", "translate(" + d3.event.translate + ")"
+                           + " scale(" + d3.event.scale + ")");
+}
 
 d3.json("force.json", function(json) {
   var force = d3.layout.force()
@@ -48,6 +57,9 @@ d3.json("force.json", function(json) {
        });
       // http://bl.ocks.org/sathomas/83515b77c2764837aac2
     force.start();
+
+  var drag = force.drag()
+    .on("dragstart", function() { d3.event.sourceEvent.stopPropagation(); });
 
   var node = vis.selectAll("circle.node")
       .data(json.nodes)

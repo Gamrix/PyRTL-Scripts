@@ -30,9 +30,17 @@ import pyrtl
 #   http://stackoverflow.com/questions/20635480/constrained-d3-js-force-display/20643596
 #   http://mbostock.github.io/d3/talk/20110921/#22
 
+# super d3 example:  http://bl.ocks.org/emeeks/9357371
+
 
 # some layout variables
 link_min_dist = 40
+
+# from https://github.com/mbostock/d3/wiki/Ordinal-Scales#category20
+d3_category20_colors = ["#1f77b4", "#aec7e8", "#ff7f0e", "#ffbb78", "#2ca02c", "#98df8a",
+                        "#d62728", "#ff9896", "#9467bd", "#c5b0d5", "#8c564b", "#c49c49",
+                        "#e377c2", "#f7b6d2", "#7f7f7f", "#c7c7c7", "#bcbd22", "#dbdb8d",
+                        "#17becf", "#9edae5"]
 
 
 def add_timing_info(net_graph=None, net_attrs=None, edge_attr=None, timing=None,
@@ -71,6 +79,19 @@ def add_timing_info(net_graph=None, net_attrs=None, edge_attr=None, timing=None,
             add_attr(edge_attr, lDist, dist, src_net, dst_net)
 
     return net_attrs, edge_attr
+
+net_types = 'w~&|^n+-*<>=xcsrm@'
+
+
+def color_based_on_op(net_attrs=None, block=None, attr_name='fill',
+                      net_colors=d3_category20_colors):
+    net_color_dict = {op: color for op, color in zip(net_types, net_colors)}
+    block = pyrtl.working_block(block)
+    if net_attrs is None:
+        net_attrs = {}
+    for net in block.logic:
+        add_attr(net_attrs, attr_name, net_color_dict[net.op], net)
+    return net_attrs
 
 
 def networkx_graph(net_graph=None, net_attrs=None, edge_attr=None):
@@ -175,12 +196,25 @@ def _check_graph_items(pyrtl_graph=None, net_attrs=None, edge_attr=None):
 
 
 def show_graph(pyrtl_graph=None, net_attrs=None, edge_attr=None):
-    # import webbrowser
     pyrtl_graph, net_attrs, edge_attr = _check_graph_items(pyrtl_graph, net_attrs, edge_attr)
+    net_attrs = color_based_on_op(net_attrs)
     net_attrs, edge_attr = add_timing_info(pyrtl_graph, net_attrs, edge_attr)
     conv_graph_data = convert_pyrtl_to_str(pyrtl_graph, net_attrs, edge_attr)
 
     Ngraph = networkx_graph(*conv_graph_data)
     build_d3_json(Ngraph)
+
+
+def show_page():
+    import multiprocessing
+    p = multiprocessing.Process(target=open_page)
+    p.start()
     start_flask()
-    # webbrowser.open("http://localhost:8000/force.html")
+
+
+def open_page(file='force.html'):
+    import webbrowser
+    import time
+    time.sleep(1)
+    webbrowser.open("http://localhost:8000/" + file)
+
