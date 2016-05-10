@@ -36,11 +36,7 @@ import pyrtl
 # some layout variables
 link_min_dist = 40
 
-# from https://github.com/mbostock/d3/wiki/Ordinal-Scales#category20
-d3_category20_colors = ["#1f77b4", "#aec7e8", "#ff7f0e", "#ffbb78", "#2ca02c", "#98df8a",
-                        "#d62728", "#ff9896", "#9467bd", "#c5b0d5", "#8c564b", "#c49c49",
-                        "#e377c2", "#f7b6d2", "#7f7f7f", "#c7c7c7", "#bcbd22", "#dbdb8d",
-                        "#17becf", "#9edae5"]
+# Attribute Adding Code
 
 
 def add_timing_info(net_graph=None, net_attrs=None, edge_attr=None, timing=None,
@@ -80,6 +76,11 @@ def add_timing_info(net_graph=None, net_attrs=None, edge_attr=None, timing=None,
 
     return net_attrs, edge_attr
 
+# from https://github.com/mbostock/d3/wiki/Ordinal-Scales#category20
+d3_category20_colors = ["#1f77b4", "#aec7e8", "#ff7f0e", "#ffbb78", "#2ca02c", "#98df8a",
+                        "#d62728", "#ff9896", "#9467bd", "#c5b0d5", "#8c564b", "#c49c49",
+                        "#e377c2", "#f7b6d2", "#7f7f7f", "#c7c7c7", "#bcbd22", "#dbdb8d",
+                        "#17becf", "#9edae5"]
 net_types = 'w~&|^n+-*<>=xcsrm@'
 
 
@@ -92,6 +93,58 @@ def color_based_on_op(net_attrs=None, block=None, attr_name='fill',
     for net in block.logic:
         add_attr(net_attrs, attr_name, net_color_dict[net.op], net)
     return net_attrs
+
+
+# Attribute Adding Helper functions
+
+def add_attr(dict, attr, val, *levels):
+    if len(levels) == 0:
+        dict[attr] = val
+        return
+
+    if levels[0] not in dict:
+        dict[levels[0]] = {}
+    add_attr(dict[levels[0]], attr, val, *levels[1:])
+    return dict
+
+
+def convert_pyrtl_to_str(net_graph=None, net_attrs=None, edge_attr=None):
+
+    conv_net_graph = str_convert_dict(net_graph, 2, True)
+    conv_net_attrs = str_convert_dict(net_attrs, 1)
+    conv_edge_attrs = str_convert_dict(edge_attr, 1)
+    for key, val_dict in conv_edge_attrs.items():
+        nets = set(n for n in val_dict.keys() if isinstance(n, pyrtl.LogicNet))
+        for n in nets:
+            val_dict[str(n)] = val_dict[n]
+            del val_dict[n]
+    return conv_net_graph, conv_net_attrs, conv_edge_attrs
+
+
+def str_convert_dict(dict, levels=1, cLLV=False, str_fun=str):
+    if levels == 0:
+        if cLLV:  # convert last layer vals
+            return str_fun(dict)
+        return dict
+    conv_dict = {str_fun(k): str_convert_dict(v, levels - 1, cLLV, str_fun)
+                 for k, v in dict.items()}
+    return conv_dict
+
+
+def _check_graph_items(pyrtl_graph=None, net_attrs=None, edge_attr=None):
+    if pyrtl_graph is None:
+        from pyrtl.inputoutput import net_graph
+        pyrtl_graph = net_graph(split_state=True)
+
+    if net_attrs is None:
+        net_attrs = {}
+    if edge_attr is None:
+        edge_attr = {}
+
+    return pyrtl_graph, net_attrs, edge_attr
+
+
+# Building the networkX graph
 
 
 def networkx_graph(net_graph=None, net_attrs=None, edge_attr=None):
@@ -120,46 +173,25 @@ def networkx_graph(net_graph=None, net_attrs=None, edge_attr=None):
 
     return graph
 
-
-# D3 usage quick guide:
-# In order to change properties of the
-
-
-def add_attr(dict, attr, val, *levels):
-    if len(levels) == 0:
-        dict[attr] = val
-        return
-
-    if levels[0] not in dict:
-        dict[levels[0]] = {}
-    add_attr(dict[levels[0]], attr, val, *levels[1:])
-    return dict
+# Graph Rendering Code
+# --------------------------------------------------------------------
 
 
-def str_convert_dict(dict, levels=1, cLLV=False, str_fun=str):
-    if levels == 0:
-        if cLLV:  # convert last layer vals
-            return str_fun(dict)
-        return dict
-    conv_dict = {str_fun(k): str_convert_dict(v, levels - 1, cLLV, str_fun)
-                 for k, v in dict.items()}
-    return conv_dict
+def build_graph(pyrtl_graph=None, net_attrs=None, edge_attr=None):
+    """ Default graph builder and json assembler """
+    pyrtl_graph, net_attrs, edge_attr = _check_graph_items(pyrtl_graph, net_attrs, edge_attr)
+    net_attrs = color_based_on_op(net_attrs)
+    net_attrs, edge_attr = add_timing_info(pyrtl_graph, net_attrs, edge_attr)
+    conv_graph_data = convert_pyrtl_to_str(pyrtl_graph, net_attrs, edge_attr)
 
+    Ngraph = networkx_graph(*conv_graph_data)
+    build_d3_json(Ngraph)
 
-def convert_pyrtl_to_str(net_graph=None, net_attrs=None, edge_attr=None):
-
-    conv_net_graph = str_convert_dict(net_graph, 2, True)
-    conv_net_attrs = str_convert_dict(net_attrs, 1)
-    conv_edge_attrs = str_convert_dict(edge_attr, 1)
-    for key, val_dict in conv_edge_attrs.items():
-        nets = set(n for n in val_dict.keys() if isinstance(n, pyrtl.LogicNet))
-        for n in nets:
-            val_dict[str(n)] = val_dict[n]
-            del val_dict[n]
-    return conv_net_graph, conv_net_attrs, conv_edge_attrs
+show_graph = build_graph
 
 
 def build_d3_json(netx_graph, file='force_constrained/force.json'):
+    """ Build a custom json graph from a networkx graph"""
     import json
     from networkx.readwrite import json_graph
     d = json_graph.node_link_data(netx_graph)
@@ -167,6 +199,14 @@ def build_d3_json(netx_graph, file='force_constrained/force.json'):
         json.dump(d, f, indent=4)
 
     print('Wrote node-link JSON data to {}'.format(file))
+
+
+def show_page():
+    """ Start a server to serve the page and open the page """
+    import multiprocessing
+    p = multiprocessing.Process(target=open_page)
+    p.start()
+    start_flask()
 
 
 def start_flask(folder='force_constrained'):
@@ -180,36 +220,6 @@ def start_flask(folder='force_constrained'):
 
     print('\nGo to http://localhost:8000/force.html to see the example\n')
     app.run(port=8000)
-
-
-def _check_graph_items(pyrtl_graph=None, net_attrs=None, edge_attr=None):
-    if pyrtl_graph is None:
-        from pyrtl.inputoutput import net_graph
-        pyrtl_graph = net_graph(split_state=True)
-
-    if net_attrs is None:
-        net_attrs = {}
-    if edge_attr is None:
-        edge_attr = {}
-
-    return pyrtl_graph, net_attrs, edge_attr
-
-
-def show_graph(pyrtl_graph=None, net_attrs=None, edge_attr=None):
-    pyrtl_graph, net_attrs, edge_attr = _check_graph_items(pyrtl_graph, net_attrs, edge_attr)
-    net_attrs = color_based_on_op(net_attrs)
-    net_attrs, edge_attr = add_timing_info(pyrtl_graph, net_attrs, edge_attr)
-    conv_graph_data = convert_pyrtl_to_str(pyrtl_graph, net_attrs, edge_attr)
-
-    Ngraph = networkx_graph(*conv_graph_data)
-    build_d3_json(Ngraph)
-
-
-def show_page():
-    import multiprocessing
-    p = multiprocessing.Process(target=open_page)
-    p.start()
-    start_flask()
 
 
 def open_page(file='force.html'):
