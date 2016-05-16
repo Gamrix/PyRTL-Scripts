@@ -52,9 +52,7 @@ d3.json("force.json", function(json) {
       .attr("linkDistance", function(d) { return d.linkDistance; })
       .attr("marker-end", "url(#end)");  // adds the arrows
 
-    force.linkDistance(function(link){
-       return ('linkDistance' in link)? link.linkDistance: 50;
-       });
+    force.linkDistance(function(l){return ('linkDistance' in l)? l.linkDistance: 50;});
       // http://bl.ocks.org/sathomas/83515b77c2764837aac2
     force.start();
 
@@ -84,7 +82,7 @@ d3.json("force.json", function(json) {
     // Add extra forces
 
     //var kx = 1.2 * e.alpha;
-    var kx = .6 * e.alpha;
+    var kx = .3 * e.alpha;
 
     node.forEach(function(d, i) {
       d.x += (d.depth - d.x) * kx;

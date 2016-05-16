@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import math
 import pyrtl
+import os
 
 
 # graph format
@@ -176,6 +177,9 @@ def networkx_graph(net_graph=None, net_attrs=None, edge_attr=None):
 # Graph Rendering Code
 # --------------------------------------------------------------------
 
+# some folder code
+current_folder = os.path.dirname(os.path.realpath(__file__))
+
 
 def build_graph(pyrtl_graph=None, net_attrs=None, edge_attr=None):
     """ Default graph builder and json assembler """
@@ -190,7 +194,7 @@ def build_graph(pyrtl_graph=None, net_attrs=None, edge_attr=None):
 show_graph = build_graph
 
 
-def build_d3_json(netx_graph, file='force_constrained/force.json'):
+def build_d3_json(netx_graph, file=current_folder + '/force_constrained/force.json'):
     """ Build a custom json graph from a networkx graph"""
     import json
     from networkx.readwrite import json_graph
@@ -209,7 +213,7 @@ def show_page():
     start_flask()
 
 
-def start_flask(folder='force_constrained'):
+def start_flask(folder=current_folder + '/force_constrained'):
     import flask
     # Serve the file over http to allow for cross origin requests
     app = flask.Flask(__name__, static_folder=folder)
@@ -227,4 +231,3 @@ def open_page(file='force.html'):
     import time
     time.sleep(1)
     webbrowser.open("http://localhost:8000/" + file)
-

@@ -19,3 +19,4 @@ def make_example_graph():
 
 if __name__ == '__main__':
     make_example_graph()
+    graphBase.show_page()
