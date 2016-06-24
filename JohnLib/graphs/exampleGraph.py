@@ -14,9 +14,17 @@ def make_example_graph():
     pyrtl.synthesize()
     pyrtl.optimize()
 
-    graphBase.show_graph()
+
+def make_example_graph_2():
+    in1, in2 = pyrtl.Input(16, 'in1'), pyrtl.Input(16, 'in2')
+    out = pyrtl.Output(17, 'output')
+    out <<= adders.cla_adder(in1, in2)
+
+    pyrtl.synthesize()
+    pyrtl.optimize()
 
 
 if __name__ == '__main__':
-    make_example_graph()
+    make_example_graph_2()
+    graphBase.build_graph()
     graphBase.show_page()

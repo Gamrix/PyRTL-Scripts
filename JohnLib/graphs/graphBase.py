@@ -47,7 +47,7 @@ def add_timing_info(net_graph=None, net_attrs=None, edge_attr=None, timing=None,
         from pyrtl.analysis import estimate
         timing = estimate.TimingAnalysis()
 
-    wire_src, wire_dst = pyrtl.working_block().as_graph(include_virtual_nodes=True)
+    wire_src, wire_dst = pyrtl.working_block().net_connections(include_virtual_nodes=True)
 
     tmap = timing.timing_map
     lDist = 'linkDistance'
